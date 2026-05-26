@@ -1,0 +1,492 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Ejecutivo - Bot Confirmación de Despacho</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#e2e8f0;
+      --primary:#0f172a;
+      --green:#16a34a;
+      --yellow:#ca8a04;
+      --red:#dc2626;
+      --blue:#2563eb;
+      --slate:#475569;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    header{
+      background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color:#fff;
+      padding:28px 28px 22px;
+    }
+    .wrap{max-width:1400px; margin:0 auto; padding:22px;}
+    .title-row{
+      display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; justify-content:space-between;
+    }
+    h1{margin:0; font-size:30px; line-height:1.15;}
+    .subtitle{margin-top:10px; color:#cbd5e1; max-width:980px; font-size:15px; line-height:1.45}
+    .meta{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;
+    }
+    .pill{
+      background:rgba(255,255,255,.1);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:13px;
+      color:#e2e8f0;
+    }
+    .section-title{
+      font-size:18px;
+      font-weight:800;
+      margin:28px 0 12px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .section-title span{
+      width:10px;height:10px;border-radius:999px;background:var(--blue);display:inline-block;
+    }
+    .grid{
+      display:grid;
+      gap:16px;
+    }
+    .kpi-grid{
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+    }
+    .two-col{
+      grid-template-columns:1.3fr .9fr;
+    }
+    .three-col{
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+    }
+    @media (max-width:1100px){
+      .kpi-grid,.two-col,.three-col{grid-template-columns:1fr 1fr}
+    }
+    @media (max-width:720px){
+      .kpi-grid,.two-col,.three-col{grid-template-columns:1fr}
+      h1{font-size:24px}
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+    .kpi{
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-height:145px;
+    }
+    .kpi .label{
+      color:var(--muted);
+      font-size:14px;
+      font-weight:600;
+      line-height:1.35;
+    }
+    .kpi .value{
+      font-size:40px;
+      line-height:1;
+      font-weight:900;
+      margin:12px 0 10px;
+      letter-spacing:-.03em;
+    }
+    .kpi .desc{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+    .sem{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      margin-top:8px;
+      font-size:13px;
+      font-weight:700;
+    }
+    .dot{width:10px;height:10px;border-radius:50%;}
+    .green{background:var(--green)}
+    .yellow{background:var(--yellow)}
+    .red{background:var(--red)}
+    .blue{background:var(--blue)}
+    .summary{
+      font-size:15px;
+      line-height:1.6;
+      color:#1e293b;
+    }
+    .summary strong{color:#0f172a}
+    .box{
+      background:#f8fafc;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+    }
+    ul.clean{
+      margin:0;
+      padding-left:18px;
+      color:#334155;
+      line-height:1.6;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      overflow:hidden;
+      border-radius:18px;
+    }
+    th,td{
+      text-align:left;
+      padding:12px 10px;
+      border-bottom:1px solid var(--line);
+      font-size:14px;
+    }
+    th{
+      background:#0f172a;
+      color:#fff;
+      font-weight:700;
+    }
+    tr:last-child td{border-bottom:none}
+    .note{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:10px;
+      line-height:1.5;
+    }
+    .chart-card{
+      height:100%;
+    }
+    .chart-wrap{
+      height:340px;
+      position:relative;
+    }
+    .small{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+    }
+    .callout{
+      background:linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+      border:1px solid #dbeafe;
+      border-radius:18px;
+      padding:16px;
+    }
+    .callout h3{
+      margin:0 0 6px;
+      font-size:16px;
+    }
+    .callout p{margin:0;color:#334155;line-height:1.5}
+    .tag{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      background:#e2e8f0;
+      color:#334155;
+      font-size:12px;
+      font-weight:700;
+      margin-right:8px;
+      margin-bottom:8px;
+    }
+    footer{
+      padding:24px 0 40px;
+      color:var(--muted);
+      text-align:center;
+      font-size:13px;
+    }
+    .highlight{
+      font-weight:800;
+      color:#0f172a;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="title-row">
+        <div>
+          <h1>Dashboard Ejecutivo | Bot de confirmación de despacho</h1>
+          <div class="subtitle">
+            Versión diseñada para reunión directiva: lectura rápida, semáforo de desempeño, mensajes clave y foco en decisiones.
+          </div>
+          <div class="meta">
+            <div class="pill">Periodo analizado: abril 2026</div>
+            <div class="pill">Base: 13.183 registros</div>
+            <div class="pill">Enfoque: entregabilidad + confirmación + calidad de datos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <div class="section-title"><span></span>Lectura ejecutiva</div>
+    <div class="card summary">
+      <p>
+        El bot está <strong>funcionando bien dentro de la conversación</strong>: cuando el cliente responde, <strong>84,87%</strong> termina confirmando.
+        El reto principal no está en la persuasión del mensaje, sino en la <strong>entrega</strong>, la <strong>lectura sin respuesta</strong> y la <strong>calidad del dato</strong>.
+      </p>
+      <p>
+        En términos globales, el desempeño de confirmación es <strong>55,23%</strong>. La entrega efectiva del mensaje llega a <strong>82,32%</strong>.
+        Esto sugiere que la mayor oportunidad está antes de la respuesta: lograr que más mensajes lleguen, se lean y generen interacción.
+      </p>
+    </div>
+
+    <div class="section-title"><span></span>Indicadores clave</div>
+    <div class="grid kpi-grid">
+      <div class="card kpi">
+        <div class="label">% Confirmación despacho</div>
+        <div class="value">55,23%</div>
+        <div class="desc">Resultado global sobre toda la base analizada.</div>
+        <div class="sem"><span class="dot yellow"></span>Margen de mejora medio</div>
+      </div>
+      <div class="card kpi">
+        <div class="label">% Respuesta de clientes</div>
+        <div class="value">63,61%</div>
+        <div class="desc">Clientes que sí interactuaron con el bot.</div>
+        <div class="sem"><span class="dot blue"></span>Buen nivel de engagement</div>
+      </div>
+      <div class="card kpi">
+        <div class="label">% Leído sin respuesta</div>
+        <div class="value">15,57%</div>
+        <div class="desc">Personas que vieron el mensaje pero no contestaron.</div>
+        <div class="sem"><span class="dot yellow"></span>Oportunidad comercial</div>
+      </div>
+      <div class="card kpi">
+        <div class="label">% Mensajes fallidos</div>
+        <div class="value">6,44%</div>
+        <div class="desc">Mensajes que no completaron entrega final.</div>
+        <div class="sem"><span class="dot red"></span>Foco operativo</div>
+      </div>
+    </div>
+
+    <div class="grid two-col" style="margin-top:16px;">
+      <div class="card chart-card">
+        <div class="section-title" style="margin-top:0;"><span></span>Funnel de conversión</div>
+        <div class="chart-wrap">
+          <canvas id="funnelChart"></canvas>
+        </div>
+        <div class="note">
+          Este embudo muestra el recorrido principal: mensajes enviados, mensajes leídos, respuestas y confirmaciones finales.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin-top:0;"><span></span>Conclusión para gerencia</div>
+        <div class="callout">
+          <h3>El bot convierte bien, pero pierde volumen antes de la respuesta</h3>
+          <p>
+            El mejoramiento más rentable está en <strong>entregabilidad</strong>, <strong>depuración de contactos</strong>,
+            <strong>hora de envío</strong> y <strong>consistencia del dato</strong>.
+          </p>
+        </div>
+
+        <div style="margin-top:16px;" class="box">
+          <div class="tag">Punto crítico</div>
+          <div class="tag">Alta respuesta</div>
+          <div class="tag">Problema de entrega</div>
+          <div class="tag">Dato duplicado</div>
+          <p class="small" style="margin-top:10px;">
+            Se detectó 18,24% de URLs repetidas y más de 1.100 registros con señales de fallo, bloqueo o expiración.
+          </p>
+        </div>
+
+        <div style="margin-top:16px;" class="box">
+          <div class="highlight">Mensaje en una frase</div>
+          <div class="small" style="margin-top:8px;">
+            “El bot persuade bien cuando conversa, pero todavía está perdiendo casos por entrega y calidad de la base.”
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title"><span></span>Desglose de estados</div>
+    <div class="grid three-col">
+      <div class="card">
+        <div class="label">Confirmados / modificados</div>
+        <div class="value" style="font-size:30px;margin-top:10px;">55,23% / 6,61%</div>
+        <div class="small">Confirmación lograda y solicitudes de ajuste de datos.</div>
+      </div>
+      <div class="card">
+        <div class="label">Leídos sin respuesta</div>
+        <div class="value" style="font-size:30px;margin-top:10px;">15,57%</div>
+        <div class="small">Interés inicial, pero sin cierre de conversación.</div>
+      </div>
+      <div class="card">
+        <div class="label">Fallidos / no enviados</div>
+        <div class="value" style="font-size:30px;margin-top:10px;">6,44% / 0,68%</div>
+        <div class="small">Problemas de entrega e integración que deben priorizarse.</div>
+      </div>
+    </div>
+
+    <div class="grid two-col" style="margin-top:16px;">
+      <div class="card chart-card">
+        <div class="section-title" style="margin-top:0;"><span></span>Distribución de resultados</div>
+        <div class="chart-wrap">
+          <canvas id="statusChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="section-title" style="margin-top:0;"><span></span>Conversión por etapa</div>
+        <div class="chart-wrap">
+          <canvas id="conversionChart"></canvas>
+        </div>
+        <div class="note">
+          En una lectura ejecutiva, la conversación convierte bien una vez iniciada. La prioridad es mover más volumen hacia la etapa de respuesta.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title"><span></span>KPIs y definiciones</div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Métrica</th>
+            <th>Resultado</th>
+            <th>Cómo se interpreta</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Confirmación de despacho</td><td>55,23%</td><td>Porción total de registros que terminaron confirmados.</td></tr>
+          <tr><td>No confirmación</td><td>44,77%</td><td>Registros que no llegaron a confirmarse.</td></tr>
+          <tr><td>Modificación de datos</td><td>6,61%</td><td>Casos que requirieron ajuste de información.</td></tr>
+          <tr><td>Mensajes fallidos</td><td>6,44%</td><td>Mensajes que no completaron el proceso de entrega.</td></tr>
+          <tr><td>Mensajes no enviados</td><td>0,68%</td><td>Casos reportados como no enviados.</td></tr>
+          <tr><td>Solo leído</td><td>15,57%</td><td>Mensaje visto, pero sin respuesta posterior.</td></tr>
+          <tr><td>Clientes que respondieron</td><td>63,61%</td><td>Clientes que interactuaron con el bot.</td></tr>
+          <tr><td>Entrega efectiva</td><td>82,32%</td><td>Mensajes que al menos llegaron a leerse o responderse.</td></tr>
+          <tr><td>Leídos → Respondidos</td><td>80,34%</td><td>Capacidad de convertir lectura en interacción.</td></tr>
+          <tr><td>Respondidos → Confirmados</td><td>84,87%</td><td>Calidad de la conversación una vez el cliente participa.</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        Nota: algunas métricas dependen de campos de auditoría que presentan nulos o duplicados. Este dashboard prioriza lectura ejecutiva sobre precisión forense de cada fila.
+      </div>
+    </div>
+
+    <div class="section-title"><span></span>Acciones recomendadas</div>
+    <div class="grid three-col">
+      <div class="card">
+        <div class="highlight">1. Entregabilidad</div>
+        <div class="small" style="margin-top:8px;">Depurar contactos inválidos y revisar causas de bloqueo/fallo.</div>
+      </div>
+      <div class="card">
+        <div class="highlight">2. Horario de envío</div>
+        <div class="small" style="margin-top:8px;">Priorizar ventanas con mayor confirmación y menor lectura sin respuesta.</div>
+      </div>
+      <div class="card">
+        <div class="highlight">3. Gobierno del dato</div>
+        <div class="small" style="margin-top:8px;">Deduplicar URLs, estandarizar estados y alinear eventos con respuesta real.</div>
+      </div>
+    </div>
+
+    <footer>
+      Dashboard ejecutivo para presentación directiva | Bot de confirmación de despacho ATOM - Jamar
+    </footer>
+  </div>
+
+  <script>
+    const funnelCtx = document.getElementById('funnelChart');
+    new Chart(funnelCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Enviados', 'Leídos', 'Respondidos', 'Confirmados'],
+        datasets: [{
+          label: 'Tasa (%)',
+          data: [90.82, 82.32, 63.61, 55.23],
+          borderRadius: 12
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.raw}%` } }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { callback: (v) => v + '%' },
+            grid: { color: '#e2e8f0' }
+          },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    const statusCtx = document.getElementById('statusChart');
+    new Chart(statusCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Respondidos', 'Leídos sin responder', 'Fallidos', 'No enviados'],
+        datasets: [{
+          data: [63.61, 15.57, 6.44, 0.68],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '58%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { usePointStyle: true, boxWidth: 10 }
+          },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw}%` } }
+        }
+      }
+    });
+
+    const conversionCtx = document.getElementById('conversionChart');
+    new Chart(conversionCtx, {
+      type: 'line',
+      data: {
+        labels: ['Enviados → Leídos', 'Leídos → Respondidos', 'Respondidos → Confirmados'],
+        datasets: [{
+          label: 'Conversión (%)',
+          data: [87.18, 80.34, 84.87],
+          tension: 0.35,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.raw}%` } }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { callback: (v) => v + '%' },
+            grid: { color: '#e2e8f0' }
+          },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
